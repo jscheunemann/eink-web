@@ -1,0 +1,75 @@
+# Build every device page from the pinned upstream sources, then boot each
+# page in headless Chrome and fail on page errors. Same packages as the
+# Containerfile; the fetched sources and toolchain (Binaryen takes 10-20
+# minutes) are cached per upstream.lock.
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      LLVM_ROOT: /usr/lib/llvm-18/bin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake make g++ clang-18 lld-18 llvm-18 python3-yaml
+          python3 -m pip install --user playwright==1.48.0
+
+      - name: Restore upstream sources and toolchain
+        uses: actions/cache@v4
+        with:
+          path: .work
+          key: work-${{ runner.os }}-${{ hashFiles('upstream.lock', 'tools/bootstrap.sh') }}
+
+      - name: Bootstrap
+        run: tools/bootstrap.sh
+
+      - name: Build
+        run: tools/build.sh
+
+      - name: Smoke test
+        run: |
+          fail=0
+          for page in picco.html trmnl-crosspoint.html trmnl-og.html; do
+            name=${page%.html}
+            echo "== $page"
+            python3 tools/smoke.py "$page" wait:8000 "shot:$name" | tee "build/smoke-$name.log"
+            if grep -q PAGEERROR "build/smoke-$name.log"; then
+              echo "::error::$page threw a page error"; fail=1
+            fi
+            if ! grep -q '^\[canvas\] [1-9]' "build/smoke-$name.log"; then
+              echo "::error::$page has no display canvas"; fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Upload pages
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke
+          path: |
+            build/shots/
+            build/smoke-*.log
+          if-no-files-found: ignore
