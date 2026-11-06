@@ -1,0 +1,502 @@
+<title>TRMNL Web</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* The live device leads; status, controls and the screen rotation sit in a
+   spec-sheet grid underneath (one column on a phone). */
+:root {
+  --ground: #e6e7e3;      /* e-paper grey */
+  --ground-2: #dcddd8;
+  --card: #f1f2ee;
+  --ink: #1d1f1e;
+  --muted: #5c625f;
+  --rule: #c6c9c3;
+  --frame: #f7f7f4;       /* the device's white frame */
+  --frame-edge: #d3d4cf;
+  --frame-shadow: rgba(30, 32, 30, 0.28);
+  --accent: #2c6a86;
+  --accent-ink: #ffffff;
+  --ok: #3d6b45;
+  --sleep: #6a5a2c;
+  --danger: #a3352b;
+  --font-ui: "Atkinson Hyperlegible", "Segoe UI", Roboto, system-ui, sans-serif;
+  --font-data: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --step--1: 0.8125rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.125rem;
+  --step-2: 1.625rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #151716; --ground-2: #1c1f1d; --card: #1f2220; --ink: #e2e6e3; --muted: #9ba39f; --rule: #313633;
+    --frame: #2b2e2c; --frame-edge: #3b3f3c; --frame-shadow: rgba(0, 0, 0, 0.6);
+    --accent: #6cb1cf; --accent-ink: #0d1a20; --ok: #8cc496; --sleep: #d6bf7a; --danger: #e07a6e; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #151716; --ground-2: #1c1f1d; --card: #1f2220; --ink: #e2e6e3; --muted: #9ba39f; --rule: #313633;
+  --frame: #2b2e2c; --frame-edge: #3b3f3c; --frame-shadow: rgba(0, 0, 0, 0.6);
+  --accent: #6cb1cf; --accent-ink: #0d1a20; --ok: #8cc496; --sleep: #d6bf7a; --danger: #e07a6e; color-scheme: dark;
+}
+
+html, body { min-height: 100%; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--step-0);
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 40px;
+}
+.wrap { max-width: 920px; margin-inline: auto; display: grid; gap: 28px; }
+
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+h1 { font-size: var(--step-2); line-height: 1.15; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.sub { color: var(--muted); font-size: var(--step--1); margin: 0; }
+.mono { font-family: var(--font-data); font-size: 0.92em; }
+
+/* ---- The device ---- */
+.device {
+  background: var(--frame);
+  border: 1px solid var(--frame-edge);
+  border-radius: 10px;
+  padding: clamp(10px, 3.2%, 30px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 22px 44px -22px var(--frame-shadow), 0 2px 6px -2px var(--frame-shadow);
+  max-width: 100%;
+}
+.panel-well {
+  position: relative;
+  background: #fafaf7;
+  box-shadow: 0 0 0 1px var(--frame-edge);
+  line-height: 0;
+}
+#panel {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 800 / 480;
+  image-rendering: auto;
+  background: #fafaf7;
+}
+/* e-paper never glows: dim the panel a touch in dark mode instead of inverting it */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #panel { filter: brightness(0.86); } }
+:root[data-theme="dark"] #panel { filter: brightness(0.86); }
+.flash { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+.flash.on { animation: refresh 420ms steps(3, end); }
+@keyframes refresh { 0% { opacity: 0.9; } 50% { opacity: 0.15; background: #fff; } 100% { opacity: 0; } }
+
+.device-foot { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: space-between; margin-top: 14px; }
+.state { display: flex; align-items: center; gap: 10px; font-size: var(--step-0); }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.awake { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent); }
+.dot.asleep { background: var(--sleep); }
+.state b { font-weight: 700; }
+
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+button, .file {
+  font: inherit;
+  font-size: var(--step--1);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border-radius: 7px;
+  border: 1px solid var(--rule);
+  background: var(--card);
+  color: var(--ink);
+  padding: 8px 14px;
+  min-height: 38px;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+button:hover:not(:disabled), .file:hover { border-color: var(--muted); }
+button:focus-visible, .file:focus-within, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+button:disabled { opacity: 0.45; cursor: default; }
+button.danger { color: var(--danger); }
+.file input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 0; }
+.file { position: relative; }
+
+/* ---- Spec sheet ---- */
+.sheet { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); align-items: start; }
+.card { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; min-width: 0; display: grid; gap: 12px; }
+.card h2 { margin: 0; font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; }
+dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: var(--step--1); }
+dt { color: var(--muted); }
+dd { margin: 0; font-family: var(--font-data); text-align: right; overflow-wrap: anywhere; }
+
+label.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: var(--step--1); }
+select { font: inherit; font-size: var(--step--1); padding: 6px 8px; border-radius: 6px; border: 1px solid var(--rule); background: var(--ground); color: var(--ink); }
+input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+
+.screens { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.screens li { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 6px; font-size: var(--step--1); min-width: 0; }
+.screens li:hover { background: var(--ground-2); }
+.screens .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.screens .tag { font-family: var(--font-data); font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.screens .tag.now { color: var(--ok); }
+.screens .tag.next { color: var(--accent); }
+.screens button { min-height: 28px; padding: 3px 9px; font-size: 0.75rem; }
+.hint { color: var(--muted); font-size: var(--step--1); margin: 0; }
+
+.activity { list-style: none; margin: 0; padding: 0; font-family: var(--font-data); font-size: 0.75rem; display: grid; gap: 4px; }
+.activity li { display: flex; gap: 8px; min-width: 0; }
+.activity .t { color: var(--muted); flex: none; }
+.activity .u { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+.log-wrap { overflow: auto; max-height: 260px; border: 1px solid var(--rule); border-radius: 6px; background: var(--ground); }
+pre.log { margin: 0; padding: 10px 12px; font-family: var(--font-data); font-size: 0.7rem; line-height: 1.5; white-space: pre; color: var(--ink); }
+
+.confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: var(--step--1); }
+.about { color: var(--muted); font-size: var(--step--1); max-width: 68ch; margin: 0; }
+.about a { color: var(--accent); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>TRMNL Web</h1>
+      <p class="sub">TRMNL OG · 7.5" 800×480 · firmware <span class="mono">{{FW_VERSION}}</span> running as WebAssembly</p>
+    </div>
+  </header>
+
+  <section aria-label="Device">
+    <div class="device">
+      <div class="panel-well">
+        <canvas id="panel" width="800" height="480" aria-label="E-paper panel"></canvas>
+        <div class="flash" id="flash"></div>
+      </div>
+    </div>
+    <div class="device-foot">
+      <div class="state" role="status" aria-live="polite">
+        <span class="dot" id="dot"></span>
+        <span id="state"><b>Booting</b></span>
+      </div>
+      <div class="btns">
+        <button class="primary" id="btn-button" disabled title="The button on the back of the device: wake it and refresh">Press button</button>
+        <button id="btn-wake" disabled title="Let the refresh interval run out now">Wake now</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet" aria-label="Device details">
+    <div class="card">
+      <h2>Screens</h2>
+      <ul class="screens" id="screens"></ul>
+      <div class="btns">
+        <label class="file">Add image<input type="file" id="add" accept="image/png,image/jpeg,image/gif,image/webp,image/bmp"></label>
+      </div>
+      <p class="hint">The mock server serves these in turn. Click one to show it on the next wake. Images are fitted to 800×480; the firmware reduces them to the panel's 4 grays.</p>
+    </div>
+
+    <div class="card">
+      <h2>Device</h2>
+      <dl>
+        <dt>Last wake</dt><dd id="d-wake">—</dd>
+        <dt>Panel mode</dt><dd id="d-mode">—</dd>
+        <dt>Refreshes</dt><dd id="d-frames">0</dd>
+        <dt>Server</dt><dd>mock · trmnl.app</dd>
+        <dt>Battery</dt><dd>4.05 V</dd>
+      </dl>
+      <label class="row">Refresh interval
+        <select id="refresh">
+          <option value="60">1 minute</option>
+          <option value="300">5 minutes</option>
+          <option value="900">15 minutes</option>
+          <option value="1800">30 minutes</option>
+        </select>
+      </label>
+      <p class="hint">The server's refresh rate: how long the firmware deep-sleeps between screens. A change applies from the next wake.</p>
+      <div class="confirm" id="reset-row">
+        <button class="danger" id="reset">Factory reset</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Network</h2>
+      <ul class="activity" id="activity"><li><span class="u">No requests yet</span></li></ul>
+    </div>
+
+    <div class="card">
+      <h2>Serial log</h2>
+      <label class="row">Firmware log (from the next boot)<input type="checkbox" id="serial"></label>
+      <div class="log-wrap" id="log-wrap" hidden><pre class="log" id="log"></pre></div>
+    </div>
+  </section>
+
+  <p class="about">This is the device's own firmware (<a href="https://github.com/usetrmnl/trmnl-firmware" target="_blank" rel="noopener">trmnl-firmware</a>, GPL-3.0) compiled to WebAssembly, with its panel controller, Wi-Fi and storage emulated. Its requests to trmnl.app are answered by a mock server in this page, and deep sleep reloads the page, so each wake is a real boot. Part of <a href="https://github.com/jscheunemann/eink-web" target="_blank" rel="noopener">eink-web</a>.</p>
+</div>
+
+<script>
+// Built-in screens, drawn at 800x480 and served as PNG by the mock server.
+(function () {
+  const F = '"Atkinson Hyperlegible", system-ui, sans-serif';
+  const M = '"JetBrains Mono", ui-monospace, monospace';
+  const rule = (g, x, y, w) => g.fillRect(x, y, w, 2);
+  const isoWeek = (d) => {
+    const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const day = t.getUTCDay() || 7;
+    t.setUTCDate(t.getUTCDate() + 4 - day);
+    const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+    return Math.ceil(((t - y0) / 86400000 + 1) / 7);
+  };
+  const dayOfYear = (d) => Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(d.getFullYear(), 0, 1)) / 86400000) + 1;
+  const daysInYear = (y) => (new Date(y, 1, 29).getMonth() === 1 ? 366 : 365);
+
+  window.einkScreens = [
+    {
+      name: "today", title: "Today",
+      draw(g, w, h) {
+        const now = new Date();
+        g.textBaseline = "alphabetic";
+        g.font = "700 30px " + F;
+        g.fillText(now.toLocaleDateString(undefined, { weekday: "long" }).toUpperCase(), 48, 82);
+        g.font = "700 132px " + F;
+        g.fillText(now.toLocaleDateString(undefined, { month: "short", day: "numeric" }), 42, 222);
+        rule(g, 48, 262, w - 96);
+        const doy = dayOfYear(now), diy = daysInYear(now.getFullYear());
+        const cells = [
+          ["WEEK", String(isoWeek(now))],
+          ["DAY OF YEAR", doy + " / " + diy],
+          ["AS OF", now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })],
+        ];
+        const cw = (w - 96) / 3;
+        cells.forEach(([k, v], i) => {
+          const x = 48 + i * cw;
+          g.font = "700 18px " + F;
+          g.fillStyle = "#555"; g.fillText(k, x, 306);
+          g.fillStyle = "#000"; g.font = "700 44px " + F; g.fillText(v, x, 360);
+        });
+        // year progress
+        const pw = w - 96;
+        g.fillStyle = "#aaa"; g.fillRect(48, 404, pw, 18);
+        g.fillStyle = "#000"; g.fillRect(48, 404, Math.round(pw * doy / diy), 18);
+        g.font = "400 18px " + M;
+        g.fillText(Math.round(100 * doy / diy) + "% of " + now.getFullYear(), 48, 452);
+      },
+    },
+    {
+      name: "panel-test", title: "Panel test",
+      draw(g, w, h) {
+        g.font = "700 22px " + F;
+        g.fillText("PANEL TEST · 800 × 480 · 4 GRAYS", 40, 54);
+        const levels = ["#000000", "#555555", "#aaaaaa", "#ffffff"];
+        levels.forEach((c, i) => {
+          g.fillStyle = c; g.fillRect(40 + i * 180, 78, 170, 120);
+          g.strokeStyle = "#000"; g.lineWidth = 2; g.strokeRect(41 + i * 180, 79, 168, 118);
+          g.fillStyle = "#000"; g.font = "400 16px " + M; g.fillText(String(i * 85).padStart(3, "0"), 40 + i * 180, 222);
+        });
+        // line weights
+        g.font = "400 16px " + M;
+        [1, 2, 3, 4, 6].forEach((lw, i) => {
+          g.fillRect(40, 252 + i * 22, 300, lw);
+          g.fillText(lw + "px", 352, 258 + i * 22);
+        });
+        // type sizes
+        let y = 262;
+        [12, 16, 20, 28, 40].forEach((s) => {
+          g.font = "400 " + s + "px " + F;
+          g.fillText(s + "px Hyperlegible", 440, y);
+          y += s + 12;
+        });
+        // checkerboard dither patch
+        for (let yy = 0; yy < 60; yy += 2) for (let xx = 0; xx < 300; xx += 2) if (((xx + yy) / 2) % 2 === 0) g.fillRect(40 + xx, 382 + yy, 2, 2);
+        g.font = "400 16px " + M; g.fillText("2px checker", 352, 418);
+      },
+    },
+    {
+      name: "glance-grid", title: "Glance layout",
+      draw(g, w, h) {
+        // A four-up dashboard skeleton for sketching glance screens.
+        const pad = 24, gap = 16, cw = (w - pad * 2 - gap) / 2, ch = (h - pad * 2 - gap - 46) / 2;
+        g.font = "700 24px " + F;
+        g.fillText("Glance layout", pad, pad + 24);
+        g.font = "400 16px " + M; g.textAlign = "right";
+        g.fillText("2 × 2 · 368 × 183 cells", w - pad, pad + 22); g.textAlign = "left";
+        const labels = ["PRIMARY", "SECONDARY", "TREND", "STATUS"];
+        for (let i = 0; i < 4; i++) {
+          const x = pad + (i % 2) * (cw + gap), y = pad + 46 + Math.floor(i / 2) * (ch + gap);
+          g.lineWidth = 2; g.strokeStyle = "#000"; g.strokeRect(x + 1, y + 1, cw - 2, ch - 2);
+          g.fillStyle = "#555"; g.font = "700 15px " + F; g.fillText(labels[i], x + 16, y + 30);
+          g.fillStyle = "#000"; g.font = "700 56px " + F; g.fillText(["42", "7 / 9", "", "OK"][i], x + 16, y + 102);
+          if (i === 2) {
+            const pts = [0.6, 0.5, 0.7, 0.4, 0.55, 0.3, 0.45, 0.2];
+            g.beginPath();
+            pts.forEach((p, k) => { const px = x + 16 + k * ((cw - 32) / (pts.length - 1)), py = y + 46 + p * (ch - 70); k ? g.lineTo(px, py) : g.moveTo(px, py); });
+            g.lineWidth = 3; g.stroke();
+          }
+          g.fillStyle = "#aaa"; g.fillRect(x + 16, y + ch - 28, cw - 32, 8);
+          g.fillStyle = "#000";
+        }
+      },
+    },
+  ];
+})();
+
+</script>
+<script src="trmnl-boot.js"></script>
+<script>
+// Page UI: the boot script calls these hooks.
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const fmtWake = { timer: "Refresh timer", button: "Button press" };
+  let frames = 0, sleepTimer = 0, countdown = 0, wakeAt = 0;
+  const logLines = [];
+
+  function setState(kind, html) {
+    $("dot").className = "dot " + kind;
+    $("state").innerHTML = html;
+  }
+
+  function renderScreens() {
+    const s = window.eink.server;
+    const list = s.screens();
+    const next = s.upNext();
+    const ul = $("screens");
+    ul.replaceChildren();
+    for (const item of list) {
+      const li = document.createElement("li");
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = item.title;
+      li.append(name);
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      if (item.name === s.shown) { tag.textContent = "showing"; tag.classList.add("now"); }
+      else if (item.name === next) { tag.textContent = "up next"; tag.classList.add("next"); }
+      li.append(tag);
+      if (item.name !== next) {
+        const b = document.createElement("button");
+        b.textContent = "Show next";
+        b.onclick = () => { s.queue(item.name); renderScreens(); };
+        li.append(b);
+      }
+      if (!item.builtIn) {
+        const r = document.createElement("button");
+        r.textContent = "Remove";
+        r.className = "danger";
+        r.onclick = () => { window.eink.removeScreen(item.name); renderScreens(); };
+        li.append(r);
+      }
+      ul.append(li);
+    }
+  }
+
+  function addActivity(method, url, mocked) {
+    const ul = $("activity");
+    if (ul.firstChild && !ul.firstChild.querySelector(".t")) ul.replaceChildren();
+    const li = document.createElement("li");
+    const t = document.createElement("span");
+    t.className = "t";
+    t.textContent = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    const u = document.createElement("span");
+    u.className = "u";
+    let path = url;
+    try { const p = new URL(url); path = p.host + p.pathname; } catch (e) {}
+    u.textContent = method + " " + path + (mocked ? "" : "  (live)");
+    u.title = url;
+    li.append(t, u);
+    ul.prepend(li);
+    while (ul.children.length > 8) ul.lastChild.remove();
+  }
+
+  function tick() {
+    const left = Math.max(0, Math.round((wakeAt - Date.now()) / 1000));
+    const mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, "0");
+    setState("asleep", "<b>Deep sleep</b> · wakes in <span class=\"mono\">" + mm + ":" + ss + "</span>");
+  }
+
+  window.einkUi = {
+    onBoot(info) {
+      $("d-wake").textContent = info.wake ? fmtWake[info.wake] || info.wake : "Power on";
+      setState("awake", "<b>Awake</b> · " + (info.wake ? "fetching the next screen" : "starting up"));
+    },
+    onFrame(f) {
+      frames++;
+      $("d-frames").textContent = String(frames);
+      $("d-mode").textContent = f.gray4 ? "4-gray" : "1-bit";
+      const fl = $("flash");
+      fl.classList.remove("on"); void fl.offsetWidth; fl.classList.add("on");
+      renderScreens();
+    },
+    onRequest(method, url, mocked) {
+      addActivity(method, url, mocked);
+      if (/\/api\/display/.test(url)) setState("awake", "<b>Awake</b> · requesting a screen");
+    },
+    onSleep(ms) {
+      wakeAt = Date.now() + ms;
+      clearTimeout(sleepTimer); clearInterval(countdown);
+      sleepTimer = setTimeout(() => window.eink.wakeUp("timer"), ms);
+      countdown = setInterval(tick, 1000);
+      tick();
+      $("btn-button").disabled = false;
+      $("btn-wake").disabled = false;
+      renderScreens();
+    },
+    onLog(line) {
+      if (!window.eink.serialLog()) return;
+      line = line.replace(/\s+$/, "");
+      if (!line) return;
+      logLines.push(line);
+      if (logLines.length > 400) logLines.splice(0, logLines.length - 400);
+      const pre = $("log");
+      pre.textContent = logLines.join("\n");
+      const w = $("log-wrap");
+      w.scrollTop = w.scrollHeight;
+    },
+  };
+
+  const wake = (cause) => {
+    $("btn-button").disabled = true; $("btn-wake").disabled = true;
+    clearTimeout(sleepTimer); clearInterval(countdown);
+    setState("awake", "<b>Waking</b>");
+    window.eink.wakeUp(cause);
+  };
+  $("btn-button").onclick = () => wake("button");
+  $("btn-wake").onclick = () => wake("timer");
+
+  const sel = $("refresh");
+  sel.value = String(window.eink.server.refreshRate);
+  if (!sel.value) sel.value = "300";
+  sel.onchange = () => window.eink.server.setRefresh(Number(sel.value));
+
+  const serial = $("serial");
+  serial.checked = window.eink.serialLog();
+  $("log-wrap").hidden = !serial.checked;
+  serial.onchange = () => {
+    window.eink.serialLog(serial.checked);
+    $("log-wrap").hidden = !serial.checked;
+    if (serial.checked && !logLines.length) $("log").textContent = "Logging starts at the next wake.";
+  };
+
+  $("add").onchange = async (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    try { await window.eink.addScreen(f); } catch (err) { console.warn(err); }
+    renderScreens();
+  };
+
+  // Factory reset asks once, in place.
+  const row = $("reset-row");
+  const resetBtn = $("reset");
+  resetBtn.onclick = () => {
+    row.replaceChildren();
+    const msg = document.createElement("span");
+    msg.textContent = "Erase the device's settings and cached screens?";
+    const yes = document.createElement("button");
+    yes.className = "danger"; yes.textContent = "Erase and restart";
+    yes.onclick = () => window.eink.factoryReset();
+    const no = document.createElement("button");
+    no.textContent = "Cancel";
+    no.onclick = () => row.replaceChildren(resetBtn);
+    row.append(msg, yes, no);
+  };
+})();
+</script>
+<script src="trmnl-og.js"></script>

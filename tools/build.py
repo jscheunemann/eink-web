@@ -144,14 +144,26 @@ SKELETON_HEAD = (
 )
 
 
+def trmnl_version():
+    """The TRMNL firmware's version, from its include/config.h."""
+    import re
+    try:
+        text = open(os.path.join(paths.TRMNL_FW, "include", "config.h")).read()
+    except OSError:
+        return "unknown"
+    parts = [re.search(r"#define FW_%s_VERSION (\d+)" % k, text) for k in ("MAJOR", "MINOR", "PATCH")]
+    return ".".join(m.group(1) for m in parts) if all(parts) else "unknown"
+
+
 def stage_pages():
-    for name in ("picco-boot.js", "test.html"):
+    for name in ("picco-boot.js", "trmnl-boot.js", "test.html"):
         shutil.copy(os.path.join(paths.WEB, name), os.path.join(OUT, name))
-    for page in ("picco.html", "trmnl-crosspoint.html"):
+    for page in ("picco.html", "trmnl-crosspoint.html", "trmnl-og.html"):
         src = os.path.join(paths.WEB, page)
         if os.path.exists(src):
+            text = open(src).read().replace("{{FW_VERSION}}", trmnl_version())
             with open(os.path.join(OUT, page), "w") as fh:
-                fh.write(SKELETON_HEAD + open(src).read() + "\n</body></html>\n")
+                fh.write(SKELETON_HEAD + text + "\n</body></html>\n")
     print("staged pages in", OUT)
 
 

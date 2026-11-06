@@ -13,6 +13,11 @@ code from these projects, under their own licenses.
 | [crosspoint-simulator](https://github.com/uxjulia/crosspoint-simulator) | MIT, © 2026 Julia Nguyen | Host shims for display, input, storage |
 | [ArduinoJson](https://github.com/bblanchon/ArduinoJson) | MIT, © Benoît Blanchon | JSON parsing |
 | [AnimatedGIF](https://github.com/bitbank2/AnimatedGIF) | Apache-2.0, © 2020 BitBank Software, Inc. | GIF decoding |
+| [TRMNL firmware](https://github.com/usetrmnl/firmware) | GPL-3.0 | The TRMNL firmware itself |
+| [bb_epaper](https://github.com/bitbank2/bb_epaper) | GPL-3.0, © BitBank Software, Inc. | TRMNL panel driver and drawing |
+| [PNGdec](https://github.com/bitbank2/PNGdec) | Apache-2.0, © 2020 BitBank Software, Inc. | TRMNL PNG decoding |
+| [JPEGDEC](https://github.com/bitbank2/JPEGDEC) | Apache-2.0, © 2020 BitBank Software, Inc. | TRMNL JPEG decoding |
+| [Arduino-Log](https://github.com/thijse/Arduino-Log) | MIT, © 2017–2021 Thijs Elenbaas and contributors | TRMNL serial logging |
 | [Emscripten](https://github.com/emscripten-core/emscripten) | MIT / University of Illinois NCSA | Compiler toolchain and runtime |
 | [SDL 2](https://github.com/libsdl-org/SDL) | zlib | Window, input and drawing in the browser |
 
@@ -21,7 +26,11 @@ code from these projects, under their own licenses.
 `core/freertos/*.h` keep the API surface of the simulator's
 `src/freertos/` shims (task handles, notifications, recursive mutexes, binary
 semaphores) with new cooperative-fiber implementations. The simulator's
-license applies to that interface:
+license applies to that interface. Several headers in `firmware/trmnl/shim/`
+(among them `WString.h`, `Stream.h`, `WiFi.h`, `IPAddress.h`,
+`HardwareSerial.h`, `nvs.h`, `DNSServer.h`, `ESPmDNS.h` and the `esp_*.h`
+headers) began as copies of the simulator's host shims and were extended for
+the TRMNL build; the same license applies to the copied parts:
 
 ```
 MIT License

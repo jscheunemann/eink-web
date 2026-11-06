@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Build dist/ (one .js/.wasm pair per device, plus the pages) from the sources
 # fetched by tools/bootstrap.sh. Incremental: unchanged objects are reused.
-# PICCO_DEVICES limits the targets, e.g. PICCO_DEVICES=picco tools/build.sh
+# PICCO_DEVICES limits the CrossPoint targets, e.g. PICCO_DEVICES=picco tools/build.sh;
+# PICCO_TRMNL=0 skips the TRMNL firmware.
 set -euo pipefail
 
 REPO=$(cd "$(dirname "$0")/.." && pwd)
@@ -25,3 +26,10 @@ for device in ${PICCO_DEVICES:-picco trmnl-crosspoint}; do
   echo "== Compile and link: $device"
   python3 "$REPO/tools/build.py" --device "$device"
 done
+
+# The TRMNL firmware builds on its own (its own sources, shims and patches).
+if [ "${PICCO_TRMNL:-1}" = 1 ]; then
+  echo "== TRMNL firmware: patch, compile and link (TRMNL OG)"
+  python3 "$REPO/firmware/trmnl/patch_trmnl.py"
+  python3 "$REPO/firmware/trmnl/build.py" --model og
+fi

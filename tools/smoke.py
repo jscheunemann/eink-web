@@ -39,7 +39,7 @@ def main():
         page = browser.new_page(viewport={"width": int(os.environ.get("VW", 520)), "height": int(os.environ.get("VH", 900))})
         page.route(ORIGIN + "/**", serve)
         page.on("console", lambda m: logs.append(f"{m.type}: {m.text}"))
-        page.on("pageerror", lambda e: logs.append(f"PAGEERROR: {e}"))
+        page.on("pageerror", lambda e: logs.append(f"PAGEERROR: {e} {getattr(e, 'stack', '')}"))
         page.goto(f"{ORIGIN}/{page_name}")
         for a in actions:
             kind, _, arg = a.partition(":")
@@ -73,7 +73,7 @@ def main():
                 out = os.path.join(SHOTS, arg + ".png")
                 page.screenshot(path=out)
                 logs.append(f"[shot] {out}")
-        size = page.evaluate("(() => { const c = document.getElementById('canvas'); return c.width + 'x' + c.height; })()")
+        size = page.evaluate("(() => { const c = document.getElementById('canvas') || document.getElementById('panel'); return c.width + 'x' + c.height; })()")
         logs.append(f"[canvas] {size}")
         browser.close()
     for line in logs[-60:]:

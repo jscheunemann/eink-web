@@ -17,6 +17,19 @@ ARDUINOJSON_REF=733bc4ee82630c88c0a619a883cd3a206efae977   # v7.4.2
 ANIMATEDGIF_URL=https://github.com/bitbank2/AnimatedGIF
 ANIMATEDGIF_REF=d01888f0255fd0781fc2b8600b9111b14c999584
 
+# TRMNL firmware (TRMNL OG; the X later) and the libraries its platformio.ini
+# pins: bb_epaper and Arduino-Log by commit, PNGdec 1.1.6 and JPEGDEC 1.8.4.
+TRMNL_FW_URL=https://github.com/usetrmnl/firmware
+TRMNL_FW_REF=d96a34233e62b477d8f9bf84fbca8d5d67d4a9fb   # FW 1.8.19
+BB_EPAPER_URL=https://github.com/bitbank2/bb_epaper
+BB_EPAPER_REF=1a38d706b0259d3637df65a91de09abc3f7ccd5f
+ARDUINO_LOG_URL=https://github.com/thijse/Arduino-Log
+ARDUINO_LOG_REF=3f4fcf5a345c1d542e56b88c0ffcb2bd2a5b0bd0
+PNGDEC_URL=https://github.com/bitbank2/PNGdec
+PNGDEC_REF=9a9c585fd39d148c5517597b02ce490e0fdb1bb4
+JPEGDEC_URL=https://github.com/bitbank2/JPEGDEC
+JPEGDEC_REF=ae9705abeeebd057c3d0a50c1e58bdec532c76c6
+
 # Toolchain. Emscripten 3.1.51 expects LLVM 18 and Binaryen 115.
 EMSCRIPTEN_URL=https://github.com/emscripten-core/emscripten
 EMSCRIPTEN_REF=c0c2ca1314672a25699846b4663701bcb6f69cca   # 3.1.51

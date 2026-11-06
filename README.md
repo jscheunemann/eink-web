@@ -7,7 +7,7 @@ testing what they show without flashing anything.
 | Device | Class | Firmware | Page | Status |
 | --- | --- | --- | --- | --- |
 | BOOX Picco | Reader | [CrossPoint](https://github.com/crosspoint-reader/crosspoint-reader) | `web/picco.html` | Working |
-| TRMNL (original) | Glance | [TRMNL firmware](https://github.com/usetrmnl/firmware) | — | In progress |
+| TRMNL OG | Glance | [TRMNL firmware](https://github.com/usetrmnl/firmware) | `web/trmnl-og.html` | Working |
 | TRMNL X | Glance | TRMNL firmware | — | Planned |
 
 **Reader** devices are carried and read in sessions; **glance** devices sit on a
@@ -40,7 +40,11 @@ The first bootstrap takes 10–20 minutes (mostly building Binaryen). A full
 compile takes about 4 minutes per device; later builds only recompile what
 changed. Build a single device with `PICCO_DEVICES=picco tools/build.sh`.
 
-`dist/` then holds one page, `.js` and `.wasm` per device, plus `picco-boot.js`.
+`dist/` then holds one page, `.js` and `.wasm` per device, plus the boot
+scripts (`picco-boot.js`, `trmnl-boot.js`). Skip the TRMNL build with
+`PICCO_TRMNL=0`; build only it with `python3 firmware/trmnl/patch_trmnl.py &&
+python3 firmware/trmnl/build.py --model og` (`--debug` adds symbols and runtime
+checks).
 Serve that folder over HTTP to try it; `file://` cannot load WebAssembly.
 
 ## Test
@@ -61,8 +65,9 @@ page's on-screen button), `tap:X,Y` (in 480×800 screen pixels) and
 | --- | --- |
 | `core/` | Shared browser platform layer: the cooperative fiber scheduler (`sim_coop.*`) that replaces threads, FreeRTOS on top of it (`freertos/`), C++ library gaps in Emscripten's libc++ (`web_compat.h`), self-contained hashes in place of OpenSSL, and stubs for calls a page cannot make |
 | `firmware/crosspoint/` | CrossPoint adapter: the browser entry point, `patch_sim.py` (adapts the crosspoint-simulator host shims; every patch must match exactly or the build stops) and `resolve.py` (picks the libraries to build the way PlatformIO's library finder does) |
+| `firmware/trmnl/` | TRMNL adapter: Arduino and ESP-IDF shims (`shim/`), an emulated UC81xx/SSD16xx panel controller that bb_epaper drives (`web_io.inl`), HTTP over the page's `fetch`, deep sleep with RTC memory (`web_platform.cpp`), and `patch_trmnl.py` for the few source fixes |
 | `tools/` | Bootstrap, build, per-device seed SD cards (`make_seed.py`), smoke test, and `paths.py` |
-| `web/` | Device pages and `picco-boot.js`, which mounts the SD card on IndexedDB, seeds it, and turns deep-sleep wake into a page reload |
+| `web/` | Device pages; `picco-boot.js` mounts the SD card on IndexedDB, seeds it, and turns deep-sleep wake into a page reload; `trmnl-boot.js` does the same for the TRMNL and runs the mock TRMNL server (`/api/setup`, `/api/display`, screen images) |
 | `upstream.lock` | Exact upstream commits for every firmware, library and toolchain component |
 
 Adding a device means a board profile in `tools/build.py`, a seed in
@@ -73,6 +78,10 @@ under `firmware/`.
 
 - Networking on CrossPoint: Wi-Fi features, OPDS catalogs, plugin downloads and
   the File Transfer web server run their screens, but nothing connects.
+- TRMNL against a real server: requests to trmnl.app are answered by the
+  page's mock server. Other URLs go out through `fetch`, so a BYOS server works
+  only if it allows cross-origin requests.
+- TRMNL X (16 grays, touch bar): not built yet.
 - E-ink behaviour: refresh flashes, ghosting and panel timing are not modelled.
 
 ## Updating upstream

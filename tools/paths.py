@@ -12,6 +12,7 @@ UPSTREAM = os.path.join(WORK, "upstream")
 FW = os.path.join(UPSTREAM, "crosspoint-reader")
 SIM_REPO = os.path.join(UPSTREAM, "crosspoint-simulator")
 SIM_SRC = os.path.join(SIM_REPO, "src")
+TRMNL_FW = os.path.join(UPSTREAM, "trmnl-firmware")
 DEPS = os.path.join(UPSTREAM, "deps")
 
 TOOLCHAIN = os.path.join(WORK, "toolchain")
