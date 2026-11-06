@@ -11,12 +11,13 @@ import re
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "tools"))
 import paths  # noqa: E402
 
 FW = paths.FW
 SIM = paths.SIM_PATCHED  # patched copy of simulator src
-OVR = paths.OVERRIDES
+CORE = paths.CORE
+ADAPTER = paths.CROSSPOINT_ADAPTER
 DEPS = paths.DEPS
 
 SRC_EXT = (".c", ".cpp", ".cc")
@@ -121,13 +122,14 @@ def candidate_libs():
 
 
 def main():
-    project_dirs = [OVR, SIM, os.path.join(FW, "src")]
+    project_dirs = [CORE, ADAPTER, SIM, os.path.join(FW, "src")]
     project_sources = []
     for f in walk(os.path.join(FW, "src"), SRC_EXT, skip=False):
         if os.path.relpath(f, os.path.join(FW, "src")) not in FW_EXCLUDE:
             project_sources.append(f)
     project_sources += walk(SIM, SRC_EXT, skip=False)
-    project_sources += walk(OVR, SRC_EXT, skip=False)
+    project_sources += walk(CORE, SRC_EXT, skip=False)
+    project_sources += walk(ADAPTER, SRC_EXT, skip=False)
 
     libs = candidate_libs()
     header_owner = {}

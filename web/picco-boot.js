@@ -1,5 +1,5 @@
 // Boots the CrossPoint firmware (WebAssembly) as a browser device (Picco or TRMNL).
-// Load before the device script (picco.js or trmnl.js). The page must contain <canvas id="canvas"> (the id Emscripten SDL2 targets).
+// Load before the device script (for example picco.js). The page must contain <canvas id="canvas"> (the id Emscripten SDL2 targets).
 (function () {
   const SD = "/fs_"; // the simulator's SD-card root (SimulatorStorageRoot.h)
   const params = new URLSearchParams(location.hash.slice(1));

@@ -47,7 +47,7 @@ is set in the firmware's settings.</p>
 for confirm, T for the switch.</p>"""), ADDING, NOT_YET],
         "settings": None,
     },
-    "trmnl": {
+    "trmnl-crosspoint": {
         "title": "TRMNL Reader Guide",
         "chapters": [WELCOME, ("One button", """
 <p>A TRMNL has a single button, so this build tries reading with one:</p>

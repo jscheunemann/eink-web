@@ -1,7 +1,7 @@
 # Known-good build environment (LLVM 18 for Emscripten 3.1.51).
 #
-#   podman build -t picco-web-build .
-#   podman run --rm -v "$PWD":/src:Z picco-web-build
+#   podman build -t eink-web-build .
+#   podman run --rm -v "$PWD":/src:Z eink-web-build
 #
 # The repo is mounted at /src; .work/, build/ and dist/ land in the checkout.
 FROM docker.io/library/ubuntu:24.04

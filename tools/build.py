@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compile the CrossPoint simulator to WebAssembly with emcc (no PlatformIO).
 
-Usage: build.py [--device picco|trmnl] [--only SUBSTRING]
+Usage: build.py [--device picco|trmnl-crosspoint] [--only SUBSTRING]
   --device  board profile to build (default: picco). Output: dist/<device>.js/.wasm
   --only    compile just the sources whose path contains SUBSTRING (no link)
 """
@@ -37,10 +37,10 @@ DEFINES = [
 DEVICES = {
     # BOOX Picco: 480x800 portrait UI, touch, page buttons, slide switch.
     "picco": ["SIMULATOR_DEVICE_PICCO", "FREEINK_DEVICE_PICCO=1", "BOARD_HAS_PSRAM"],
-    # TRMNL stand-in: CrossPoint has no TRMNL board, so this uses the closest
+    # Experiment (kept for the record): CrossPoint on a TRMNL. It has no TRMNL board, so this uses the closest
     # existing one, the Xteink X4 Classic: 800x480 panel, buttons only, no
     # touch, ESP32-C3 class. The page drives it with a one-button scheme.
-    "trmnl": ["SIMULATOR_DEVICE_X4_CLASSIC", "FREEINK_DEVICE_X4CLASSIC=1"],
+    "trmnl-crosspoint": ["SIMULATOR_DEVICE_X4_CLASSIC", "FREEINK_DEVICE_X4CLASSIC=1"],
 }
 
 COMMON = ["-O2", "-sUSE_SDL=2", "-Wno-deprecated-declarations", "-Wno-narrowing", "-Wno-c++11-narrowing",
@@ -76,7 +76,7 @@ def compile_one(job):
     if os.path.exists(obj) and os.path.getmtime(obj) >= os.path.getmtime(src):
         return obj, None
     is_c = src.endswith(".c")
-    lang = ["-std=gnu11"] if is_c else ["-std=gnu++2a", "-include", os.path.join(paths.OVERRIDES, "web_compat.h")]
+    lang = ["-std=gnu11"] if is_c else ["-std=gnu++2a", "-include", os.path.join(paths.CORE, "web_compat.h")]
     cmd = [EMCC if is_c else EMXX] + lang + flags + ["-c", src, "-o", obj]
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0:
@@ -147,7 +147,7 @@ SKELETON_HEAD = (
 def stage_pages():
     for name in ("picco-boot.js", "test.html"):
         shutil.copy(os.path.join(paths.WEB, name), os.path.join(OUT, name))
-    for page in ("index.html", "trmnl.html"):
+    for page in ("picco.html", "trmnl-crosspoint.html"):
         src = os.path.join(paths.WEB, page)
         if os.path.exists(src):
             with open(os.path.join(OUT, page), "w") as fh:

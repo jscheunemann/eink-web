@@ -1,6 +1,7 @@
 # Third-party notices
 
-This repository contains build scripts and browser adaptations. It does not
+This repository is licensed GPL-3.0 (see LICENSE). It contains build scripts
+and browser adaptations, and does not
 vendor upstream source: `tools/bootstrap.sh` fetches each project at the
 commit pinned in `upstream.lock`. The built `dist/` output contains compiled
 code from these projects, under their own licenses.
@@ -17,7 +18,7 @@ code from these projects, under their own licenses.
 
 ## Derived files
 
-`overrides/freertos/*.h` keep the API surface of the simulator's
+`core/freertos/*.h` keep the API surface of the simulator's
 `src/freertos/` shims (task handles, notifications, recursive mutexes, binary
 semaphores) with new cooperative-fiber implementations. The simulator's
 license applies to that interface:

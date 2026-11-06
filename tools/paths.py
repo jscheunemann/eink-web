@@ -22,7 +22,9 @@ EM_CONFIG = os.path.join(EMSCRIPTEN, ".emscripten")
 SDL2 = os.path.join(TOOLCHAIN, "SDL2")
 PYSHIM = os.path.join(REPO, "tools", "pyshim")
 
-OVERRIDES = os.path.join(REPO, "overrides")
+# Shared browser platform layer, and each firmware's adapter.
+CORE = os.path.join(REPO, "core")
+CROSSPOINT_ADAPTER = os.path.join(REPO, "firmware", "crosspoint")
 WEB = os.path.join(REPO, "web")
 BUILD = os.path.join(REPO, "build")
 SIM_PATCHED = os.path.join(BUILD, "simsrc")

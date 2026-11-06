@@ -30,7 +30,7 @@ def serve(route):
 
 
 def main():
-    page_name = sys.argv[1] if len(sys.argv) > 1 else "test.html"
+    page_name = sys.argv[1] if len(sys.argv) > 1 else "picco.html"
     actions = sys.argv[2:] or ["wait:8000", "shot:boot"]
     os.makedirs(SHOTS, exist_ok=True)
     logs = []

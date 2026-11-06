@@ -9,7 +9,7 @@ import shutil
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "tools"))
 import paths  # noqa: E402
 
 SIM_SRC = paths.SIM_SRC
@@ -29,7 +29,7 @@ def main():
     shutil.rmtree(OUT, ignore_errors=True)
     shutil.copytree(SIM_SRC, OUT)
 
-    # Replaced by overrides/: the fiber scheduler entry point and FreeRTOS.
+    # Replaced by core/ (FreeRTOS on fibers) and this adapter's entry point.
     os.remove(os.path.join(OUT, "simulator_main.cpp"))
     shutil.rmtree(os.path.join(OUT, "freertos"))
     # Self-contained MD5 instead of OpenSSL/CommonCrypto.
