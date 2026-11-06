@@ -71,6 +71,27 @@ def main():
     # Firmware newer than this simulator revision asks the display for its
     # controller name (About screen). Picco reports SSD1677 in the SDK.
     patch("HalDisplay.h", "class HalDisplay {\n", "class HalDisplay {\n public:\n  const char *controllerName() const { return \"SSD1677\"; }\n\n")
+    # HTTP runs `curl` on the desktop; a page can't. In the browser, send the
+    # request through the page's fetch() instead (sim_http_web.cpp). The mock
+    # root and file:// paths still come first, as on the desktop.
+    patch("SimHttpFetch.h",
+          "inline bool fetch(const std::string& url,",
+          "}  // namespace sim_http_fetch\n\n"
+          "#ifdef __EMSCRIPTEN__\n"
+          "bool sim_http_web_fetch(const std::string& url, const char* method,\n"
+          "                        const std::map<std::string, std::string>& headers, const std::string& basicAuth,\n"
+          "                        const char* body, sim_http_fetch::Response& out, bool followRedirects,\n"
+          "                        const sim_http_fetch::Timeouts& timeouts);\n"
+          "#endif\n\n"
+          "namespace sim_http_fetch {\n\n"
+          "inline bool fetch(const std::string& url,")
+    patch("SimHttpFetch.h",
+          "  return fetchWithCurl(url, method, headers, basicAuth, body, out, followRedirects, timeouts);\n",
+          "#ifdef __EMSCRIPTEN__\n"
+          "  return sim_http_web_fetch(url, method, headers, basicAuth, body, out, followRedirects, timeouts);\n"
+          "#else\n"
+          "  return fetchWithCurl(url, method, headers, basicAuth, body, out, followRedirects, timeouts);\n"
+          "#endif\n")
     print("patch_sim: ok")
 
 
