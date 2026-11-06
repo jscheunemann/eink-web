@@ -153,6 +153,12 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent);
 pre.log { margin: 0; padding: 10px 12px; font-family: var(--font-data); font-size: 0.7rem; line-height: 1.5; white-space: pre; color: var(--ink); }
 
 .confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: var(--step--1); }
+.server { display: grid; gap: 8px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.server label { font-size: var(--step--1); font-weight: 700; }
+.server-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.server-row input { flex: 1 1 180px; min-width: 0; font: inherit; font-family: var(--font-data); font-size: var(--step--1); padding: 7px 10px; border-radius: 6px; border: 1px solid var(--rule); background: var(--ground); color: var(--ink); }
+.alert { border: 1px solid var(--danger); color: var(--danger); border-radius: 6px; padding: 8px 10px; font-size: var(--step--1); margin: 0; }
+.activity li.err .u { color: var(--danger); }
 .about { color: var(--muted); font-size: var(--step--1); max-width: 68ch; margin: 0; }
 .about a { color: var(--accent); }
 </style>
@@ -187,11 +193,14 @@ pre.log { margin: 0; padding: 10px 12px; font-family: var(--font-data); font-siz
   <section class="sheet" aria-label="Device details">
     <div class="card">
       <h2>Screens</h2>
-      <ul class="screens" id="screens"></ul>
-      <div class="btns">
-        <label class="file">Add image<input type="file" id="add" accept="image/png,image/jpeg,image/gif,image/webp,image/bmp"></label>
+      <div id="mock-screens">
+        <ul class="screens" id="screens"></ul>
+        <div class="btns">
+          <label class="file">Add image<input type="file" id="add" accept="image/png,image/jpeg,image/gif,image/webp,image/bmp"></label>
+        </div>
+        <p class="hint">The mock server serves these in turn. Click one to show it on the next wake. Images are fitted to 800×480; the firmware reduces them to the panel's 4 grays.</p>
       </div>
-      <p class="hint">The mock server serves these in turn. Click one to show it on the next wake. Images are fitted to 800×480; the firmware reduces them to the panel's 4 grays.</p>
+      <p class="hint" id="server-screens" hidden>Screens come from your server. Press the button to ask it for the next one.</p>
     </div>
 
     <div class="card">
@@ -200,7 +209,7 @@ pre.log { margin: 0; padding: 10px 12px; font-family: var(--font-data); font-siz
         <dt>Last wake</dt><dd id="d-wake">—</dd>
         <dt>Panel mode</dt><dd id="d-mode">—</dd>
         <dt>Refreshes</dt><dd id="d-frames">0</dd>
-        <dt>Server</dt><dd>mock · trmnl.app</dd>
+        <dt>Server</dt><dd id="d-server">built-in mock</dd>
         <dt>Battery</dt><dd>4.05 V</dd>
       </dl>
       <label class="row">Refresh interval
@@ -211,7 +220,17 @@ pre.log { margin: 0; padding: 10px 12px; font-family: var(--font-data); font-siz
           <option value="1800">30 minutes</option>
         </select>
       </label>
-      <p class="hint">The server's refresh rate: how long the firmware deep-sleeps between screens. A change applies from the next wake.</p>
+      <p class="hint" id="refresh-hint">The server's refresh rate: how long the firmware deep-sleeps between screens. A change applies from the next wake.</p>
+      <form class="server" id="server-form" novalidate>
+        <label for="server-url">Server address</label>
+        <div class="server-row">
+          <input id="server-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="http://pocket.local:8080">
+          <button type="submit">Use server</button>
+          <button type="button" id="server-mock" hidden>Use built-in mock</button>
+        </div>
+        <p class="alert" id="server-error" hidden></p>
+        <p class="hint">Like the custom server field in the TRMNL's Wi-Fi setup: the device forgets its registration, restarts, and registers with that server. It must allow cross-origin requests from this page.</p>
+      </form>
       <div class="confirm" id="reset-row">
         <button class="danger" id="reset">Factory reset</button>
       </div>
@@ -220,6 +239,7 @@ pre.log { margin: 0; padding: 10px 12px; font-family: var(--font-data); font-siz
     <div class="card">
       <h2>Network</h2>
       <ul class="activity" id="activity"><li><span class="u">No requests yet</span></li></ul>
+      <p class="alert" id="net-error" hidden></p>
     </div>
 
     <div class="card">
@@ -229,7 +249,7 @@ pre.log { margin: 0; padding: 10px 12px; font-family: var(--font-data); font-siz
     </div>
   </section>
 
-  <p class="about">This is the device's own firmware (<a href="https://github.com/usetrmnl/trmnl-firmware" target="_blank" rel="noopener">trmnl-firmware</a>, GPL-3.0) compiled to WebAssembly, with its panel controller, Wi-Fi and storage emulated. Its requests to trmnl.app are answered by a mock server in this page, and deep sleep reloads the page, so each wake is a real boot. Part of <a href="https://github.com/jscheunemann/eink-web" target="_blank" rel="noopener">eink-web</a>.</p>
+  <p class="about">This is the device's own firmware (<a href="https://github.com/usetrmnl/trmnl-firmware" target="_blank" rel="noopener">trmnl-firmware</a>, GPL-3.0) compiled to WebAssembly, with its panel controller, Wi-Fi and storage emulated. Its requests to trmnl.app are answered by a mock server in this page (or go to your own server, if you set one), and deep sleep reloads the page, so each wake is a real boot. Part of <a href="https://github.com/jscheunemann/eink-web" target="_blank" rel="noopener">eink-web</a>.</p>
 </div>
 
 <script>
@@ -405,6 +425,15 @@ pre.log { margin: 0; padding: 10px 12px; font-family: var(--font-data); font-siz
     while (ul.children.length > 8) ul.lastChild.remove();
   }
 
+  function blockedMessage(url) {
+    let host = url;
+    try { host = new URL(url).host; } catch (e) {}
+    const mixed = location.protocol === "https:" && /^http:/i.test(url);
+    return "Couldn't reach " + host + ". " +
+      (mixed ? "This page is on https, so the browser blocks plain http servers; use an https address or open this page over http. " : "") +
+      "The server has to allow cross-origin requests from this page. A copy of this page published on claude.ai can't reach other servers at all; open TRMNL Web from your own server instead.";
+  }
+
   function tick() {
     const left = Math.max(0, Math.round((wakeAt - Date.now()) / 1000));
     const mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, "0");
@@ -428,14 +457,26 @@ pre.log { margin: 0; padding: 10px 12px; font-family: var(--font-data); font-siz
       addActivity(method, url, mocked);
       if (/\/api\/display/.test(url)) setState("awake", "<b>Awake</b> · requesting a screen");
     },
+    onRequestError(url) {
+      const ul = $("activity");
+      if (ul.firstChild) ul.firstChild.classList.add("err");
+      const box = $("net-error");
+      box.textContent = blockedMessage(url);
+      box.hidden = false;
+    },
     onSleep(ms) {
-      wakeAt = Date.now() + ms;
       clearTimeout(sleepTimer); clearInterval(countdown);
-      sleepTimer = setTimeout(() => window.eink.wakeUp("timer"), ms);
-      countdown = setInterval(tick, 1000);
-      tick();
       $("btn-button").disabled = false;
-      $("btn-wake").disabled = false;
+      if (ms > 0) {
+        wakeAt = Date.now() + ms;
+        sleepTimer = setTimeout(() => window.eink.wakeUp("timer"), ms);
+        countdown = setInterval(tick, 1000);
+        tick();
+        $("btn-wake").disabled = false;
+      } else {
+        setState("asleep", "<b>Deep sleep</b> · until the button is pressed");
+        $("btn-wake").disabled = true;
+      }
       renderScreens();
     },
     onLog(line) {
@@ -464,6 +505,31 @@ pre.log { margin: 0; padding: 10px 12px; font-family: var(--font-data); font-siz
   sel.value = String(window.eink.server.refreshRate);
   if (!sel.value) sel.value = "300";
   sel.onchange = () => window.eink.server.setRefresh(Number(sel.value));
+
+  // Server address
+  const current = window.eink.serverUrl();
+  $("d-server").textContent = current ? new URL(current).host : "built-in mock";
+  $("server-url").value = current;
+  $("server-mock").hidden = !current;
+  $("mock-screens").hidden = !!current;
+  $("server-screens").hidden = !current;
+  if (current) {
+    sel.disabled = true;
+    $("refresh-hint").textContent = "Set by your server's refresh_rate.";
+  }
+  $("server-form").onsubmit = (e) => {
+    e.preventDefault();
+    const err = $("server-error");
+    const v = $("server-url").value.trim();
+    try {
+      if (!v) throw new Error("Enter an address, or use the built-in mock.");
+      window.eink.useServer(v);
+    } catch (x) {
+      err.textContent = x.message.startsWith("Failed to construct") ? "That isn't a valid address." : x.message;
+      err.hidden = false;
+    }
+  };
+  $("server-mock").onclick = () => window.eink.useServer("");
 
   const serial = $("serial");
   serial.checked = window.eink.serialLog();

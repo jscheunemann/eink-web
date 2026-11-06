@@ -63,6 +63,12 @@
     return v;
   }
 
+  // The server the device talks to: "" is the mock server in this page,
+  // otherwise a base URL such as http://pocket.local:8080 (a BYOS server).
+  // It is written to the firmware's own api_url setting, as the device's
+  // Wi-Fi setup page would.
+  const customServer = () => pref("server") || "";
+
   // ---- Mock TRMNL server -------------------------------------------------
   // Answers the hosts the firmware talks to by default.
   const MOCK_HOSTS = /^https?:\/\/(trmnl\.app|usetrmnl\.com|[a-z0-9-]+\.trmnl\.app)(\/|$)/i;
@@ -209,11 +215,15 @@
     const mocked = MOCK_HOSTS.test(url);
     if (ui().onRequest) ui().onRequest(method, url, mocked);
     const done = (res) => { r.status = res.status; r.body = res.body; r.headers = res.headers; r.state = 1; };
-    const fail = (e) => { log("request failed: " + url + " " + e); r.state = -1; };
+    const fail = (e) => {
+      log("request failed: " + url + " " + e);
+      r.state = -1;
+      if (ui().onRequestError) ui().onRequestError(url, String(e && e.message || e));
+    };
     if (mocked) {
       setTimeout(() => server.handle(method, url).then(done, fail), 120); // a network's worth of delay
     } else {
-      fetch(url, { method, headers, body: body || undefined })
+      fetch(url, { method, headers, body: body || undefined, mode: "cors", credentials: "omit" })
         .then(async (res) => {
           const h = {};
           res.headers.forEach((v, k) => { h[k.toLowerCase()] = v; });
@@ -264,9 +274,11 @@
     try { Module.FS.writeFile(SHOWN, server.shown || ""); } catch (e) {}
     persist(() => {
       asleep = true;
-      log("deep sleep for " + Math.round(sleepMs / 1000) + " s");
-      if (ui().onSleep) ui().onSleep(sleepMs);
-      else setTimeout(() => wakeUp("timer"), sleepMs);
+      // No timer (0) means the firmware sleeps until the button is pressed,
+      // as it does after a failed registration.
+      log(sleepMs > 0 ? "deep sleep for " + Math.round(sleepMs / 1000) + " s" : "deep sleep until the button is pressed");
+      if (ui().onSleep) ui().onSleep(sleepMs > 0 ? sleepMs : 0);
+      else if (sleepMs > 0) setTimeout(() => wakeUp("timer"), sleepMs);
     });
   }
 
@@ -286,6 +298,19 @@
     removeScreen,
     wakeUp,
     isAsleep: () => asleep,
+    // Points the device at another server and cold-boots it, so it registers
+    // there (the old server's API key and cached screens are erased).
+    serverUrl: () => customServer(),
+    useServer(url) {
+      let base = "";
+      if (url) {
+        const u = new URL(url); // throws on a malformed URL
+        if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("Use an http:// or https:// address");
+        base = (u.origin + u.pathname).replace(/\/+$/, "");
+      }
+      pref("server", base);
+      window.eink.factoryReset();
+    },
     serialLog: (on) => (on === undefined ? !!pref("serial") : pref("serial", !!on)),
     // Wipes the device's storage (Wi-Fi, API key, cached images) and cold-boots.
     // Screens the viewer added are kept.
@@ -367,6 +392,7 @@
         }
         // The firmware's serial log (its verbose_log setting) follows the page's switch.
         setPref("data", "verbose_log", pref("serial") ? "1" : "0");
+        setPref("data", "api_url", customServer() || "https://trmnl.app");
         if (ui().onBoot) ui().onBoot({ wake });
         Module.removeRunDependency("persist");
       });

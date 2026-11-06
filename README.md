@@ -78,9 +78,11 @@ under `firmware/`.
 
 - Networking on CrossPoint: Wi-Fi features, OPDS catalogs, plugin downloads and
   the File Transfer web server run their screens, but nothing connects.
-- TRMNL against a real server: requests to trmnl.app are answered by the
-  page's mock server. Other URLs go out through `fetch`, so a BYOS server works
-  only if it allows cross-origin requests.
+- TRMNL against your own server: set it under Device > Server address (the
+  firmware's own `api_url` setting). The server must allow cross-origin
+  requests, including preflights for the firmware's headers. The copy
+  published on claude.ai can't reach other servers at all, so serve `dist/`
+  from the server itself (same origin, no CORS needed) to use this.
 - TRMNL X (16 grays, touch bar): not built yet.
 - E-ink behaviour: refresh flashes, ghosting and panel timing are not modelled.
 
