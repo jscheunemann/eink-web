@@ -33,8 +33,8 @@ podman build -t eink-web-build .
 podman run --rm -v "$PWD":/src:Z eink-web-build
 ```
 
-(The container recipe has not been run end to end yet; the native path above
-has.)
+(The container recipe has been run end to end for the Picco on an arm64 Mac
+with Podman.)
 
 The first bootstrap takes 10–20 minutes (mostly building Binaryen). A full
 compile takes about 4 minutes per device; later builds only recompile what
@@ -64,7 +64,7 @@ page's on-screen button), `tap:X,Y` (in 480×800 screen pixels) and
 | Path | What it holds |
 | --- | --- |
 | `core/` | Shared browser platform layer: the cooperative fiber scheduler (`sim_coop.*`) that replaces threads, FreeRTOS on top of it (`freertos/`), C++ library gaps in Emscripten's libc++ (`web_compat.h`), self-contained hashes in place of OpenSSL, and stubs for calls a page cannot make |
-| `firmware/crosspoint/` | CrossPoint adapter: the browser entry point, `patch_sim.py` (adapts the crosspoint-simulator host shims; every patch must match exactly or the build stops) and `resolve.py` (picks the libraries to build the way PlatformIO's library finder does) |
+| `firmware/crosspoint/` | CrossPoint adapter: the browser entry point, HTTP over the page's `fetch` (`sim_http_web.cpp`), `patch_sim.py` (adapts the crosspoint-simulator host shims; every patch must match exactly or the build stops) and `resolve.py` (picks the libraries to build the way PlatformIO's library finder does) |
 | `firmware/trmnl/` | TRMNL adapter: Arduino and ESP-IDF shims (`shim/`), an emulated UC81xx/SSD16xx panel controller that bb_epaper drives (`web_io.inl`), HTTP over the page's `fetch`, deep sleep with RTC memory (`web_platform.cpp`), and `patch_trmnl.py` for the few source fixes |
 | `tools/` | Bootstrap, build, per-device seed SD cards (`make_seed.py`), smoke test, and `paths.py` |
 | `web/` | Device pages; `picco-boot.js` mounts the SD card on IndexedDB, seeds it, and turns deep-sleep wake into a page reload; `trmnl-boot.js` does the same for the TRMNL and runs the mock TRMNL server (`/api/setup`, `/api/display`, screen images) |
@@ -76,8 +76,11 @@ under `firmware/`.
 
 ## Not working yet
 
-- Networking on CrossPoint: Wi-Fi features, OPDS catalogs, plugin downloads and
-  the File Transfer web server run their screens, but nothing connects.
+- Networking on CrossPoint, partly: firmware HTTP requests (plugin catalogs and
+  events, OPDS, downloads) go through the page's `fetch()`
+  (`firmware/crosspoint/sim_http_web.cpp`), so they reach any server that allows
+  cross-origin requests. Wi-Fi is still simulated, and the File Transfer web
+  server still doesn't accept connections.
 - TRMNL against your own server: set it under Device > Server address (the
   firmware's own `api_url` setting). The server must allow cross-origin
   requests, including preflights for the firmware's headers. The copy

@@ -8,7 +8,7 @@ FROM docker.io/library/ubuntu:24.04
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      ca-certificates git cmake make g++ clang-18 lld-18 \
+      ca-certificates git cmake make g++ clang-18 lld-18 llvm-18 \
       python3 python3-yaml nodejs npm \
  && rm -rf /var/lib/apt/lists/*
 
