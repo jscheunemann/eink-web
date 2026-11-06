@@ -1,0 +1,7 @@
+# Fetched upstream sources and toolchain (tools/bootstrap.sh)
+.work/
+# Build outputs (tools/build.sh)
+build/
+dist/
+__pycache__/
+*.pyc

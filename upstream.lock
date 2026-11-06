@@ -1,0 +1,28 @@
+# Exact upstream revisions this build is tested against. Sourced by
+# tools/bootstrap.sh. Bump one at a time and rebuild; the patch step fails
+# loudly when an upstream change breaks a patch.
+
+# Firmware and its SDK (the SDK commit is the firmware's submodule pin).
+CROSSPOINT_URL=https://github.com/crosspoint-reader/crosspoint-reader
+CROSSPOINT_REF=bb93a462cca968be7606cde39833dc20c7a9b48c
+FREEINK_SDK_REF=5e94fe7480f019c89fbf691aef87523eb1b46704
+
+# Desktop simulator whose host shims the browser build adapts.
+SIMULATOR_URL=https://github.com/uxjulia/crosspoint-simulator
+SIMULATOR_REF=4c78f3ff51b5b1e5d2f69f595dba79bc159c4c1f
+
+# Firmware library dependencies normally fetched by PlatformIO.
+ARDUINOJSON_URL=https://github.com/bblanchon/ArduinoJson
+ARDUINOJSON_REF=733bc4ee82630c88c0a619a883cd3a206efae977   # v7.4.2
+ANIMATEDGIF_URL=https://github.com/bitbank2/AnimatedGIF
+ANIMATEDGIF_REF=d01888f0255fd0781fc2b8600b9111b14c999584
+
+# Toolchain. Emscripten 3.1.51 expects LLVM 18 and Binaryen 115.
+EMSCRIPTEN_URL=https://github.com/emscripten-core/emscripten
+EMSCRIPTEN_REF=c0c2ca1314672a25699846b4663701bcb6f69cca   # 3.1.51
+BINARYEN_URL=https://github.com/WebAssembly/binaryen
+BINARYEN_REF=fcf6efb2d1b4d5e8dce091e6e06a7fb6ce5b635a     # version_115
+SDL2_URL=https://github.com/libsdl-org/SDL
+SDL2_REF=55b03c7493a7abed33cf803d1380a40fa8af903f         # release-2.24.2
+ACORN_URL=https://github.com/acornjs/acorn
+ACORN_REF=31967af4ecfd4d77ad1a4e09884513fd234cd39f        # 8.11.2

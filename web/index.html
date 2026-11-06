@@ -1,0 +1,364 @@
+<title>Picco Web</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the live device is the hero; a spec-sheet panel sits beside it on
+   wide screens and stacks underneath on a phone. */
+:root {
+  --ground: #e4e7e3;      /* e-paper grey with a faint green cast */
+  --ground-2: #d8dcd7;
+  --ink: #1c201f;
+  --muted: #59625e;
+  --rule: #c3c9c4;
+  --body: #2a2e2d;        /* graphite device shell */
+  --body-hi: #3b403e;
+  --body-lo: #1b1e1d;
+  --key: #4a504d;
+  --key-hi: #626a66;
+  --accent: #2c6a86;      /* focus and active states */
+  --accent-ink: #ffffff;
+  --danger: #a3352b;
+  --font-ui: "Atkinson Hyperlegible", "Segoe UI", Roboto, system-ui, sans-serif;
+  --font-data: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --step--1: 0.8125rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.125rem;
+  --step-2: 1.75rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #141716; --ground-2: #1c201f; --ink: #e2e7e4; --muted: #9aa49f; --rule: #2f3533;
+    --body: #343937; --body-hi: #474d4a; --body-lo: #222625; --key: #5a615d; --key-hi: #737b77;
+    --accent: #6cb1cf; --accent-ink: #0d1a20; --danger: #e07a6e; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #141716; --ground-2: #1c201f; --ink: #e2e7e4; --muted: #9aa49f; --rule: #2f3533;
+  --body: #343937; --body-hi: #474d4a; --body-lo: #222625; --key: #5a615d; --key-hi: #737b77;
+  --accent: #6cb1cf; --accent-ink: #0d1a20; --danger: #e07a6e; color-scheme: dark;
+}
+
+html, body { min-height: 100%; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--step-0);
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 32px;
+}
+
+.stage {
+  display: grid;
+  gap: 28px;
+  justify-items: center;
+  max-width: 1040px;
+  margin-inline: auto;
+}
+@media (min-width: 860px) {
+  .stage { grid-template-columns: auto minmax(0, 380px); align-items: center; gap: 64px; min-height: calc(100vh - 52px); }
+}
+
+/* ---- The device ---- */
+.device-col { padding: 14px 18px; }
+.device {
+  position: relative;
+  background: linear-gradient(160deg, var(--body-hi), var(--body) 38%, var(--body-lo));
+  border-radius: 26px;
+  padding: 18px 16px 30px;
+  box-shadow: 0 1px 0 var(--body-hi) inset, 0 18px 40px -18px rgba(0, 0, 0, 0.55);
+}
+.screen {
+  position: relative;
+  background: #fbfbf8;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px var(--body-lo), 0 0 0 3px var(--body-hi);
+  overflow: hidden;
+  width: var(--sw, 288px);
+  height: var(--sh, 480px);
+}
+#canvas {
+  display: block;
+  width: var(--sw, 288px) !important;
+  height: var(--sh, 480px) !important;
+  touch-action: none;
+  outline: none;
+}
+.status {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; gap: 10px; text-align: center;
+  background: #fbfbf8; color: #1c201f;
+  font-family: var(--font-data); font-size: var(--step--1);
+  padding: 24px;
+}
+.status strong { font-family: var(--font-ui); font-size: var(--step-1); }
+.status button { justify-self: center; }
+.bar { width: 120px; height: 3px; background: #d5d9d5; justify-self: center; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 40%; background: #1c201f; animation: slide 1.2s ease-in-out infinite; }
+@keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+@media (prefers-reduced-motion: reduce) { .bar i { animation: none; width: 100%; } }
+
+/* Hardware controls sit on the shell's edges, like the real unit. */
+.hw {
+  position: absolute;
+  border: 0; padding: 0; cursor: pointer;
+  background: linear-gradient(90deg, var(--key-hi), var(--key));
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.hw::before { content: ""; position: absolute; inset: -14px; } /* larger touch target */
+.hw:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.hw.is-down { filter: brightness(0.8); transform: translateX(-2px); }
+.page-up, .page-down { right: -7px; width: 7px; height: 58px; border-radius: 0 6px 6px 0; }
+.page-up { top: 30%; }
+.page-down { top: calc(30% + 70px); }
+.power { top: -6px; right: 22%; width: 46px; height: 6px; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, var(--key-hi), var(--key)); }
+.power.is-down { transform: translateY(2px); }
+.switch { left: -7px; top: 22%; width: 7px; height: 44px; border-radius: 6px 0 0 6px; background: var(--body-lo); }
+.switch::after {
+  content: ""; position: absolute; left: 1px; width: 5px; height: 20px; border-radius: 3px;
+  top: 3px; background: var(--key-hi); transition: top 120ms;
+}
+.switch[aria-pressed="true"]::after { top: 21px; background: var(--accent); }
+.device-caption {
+  position: absolute; left: 0; right: 0; bottom: 9px; text-align: center;
+  font-family: var(--font-data); font-size: 10px; letter-spacing: 0.14em; color: #8d9692;
+}
+
+/* ---- Panel ---- */
+.panel { width: 100%; max-width: 520px; display: grid; gap: 22px; min-width: 0; }
+h1 { font-size: var(--step-2); line-height: 1.15; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h2 {
+  font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted); margin: 0 0 8px; font-weight: 700;
+}
+.lede { margin: 6px 0 0; color: var(--muted); max-width: 58ch; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn {
+  font: inherit; font-weight: 700; font-size: var(--step--1);
+  border-radius: 8px; padding: 10px 14px; cursor: pointer;
+  border: 1px solid var(--rule); background: var(--ground-2); color: var(--ink);
+  display: inline-flex; align-items: center; gap: 8px; min-height: 42px;
+}
+.btn:hover { border-color: var(--muted); }
+.btn:focus-visible, .file-btn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn-danger { color: var(--danger); }
+.btn-danger.is-armed { background: var(--danger); border-color: var(--danger); color: var(--ground); }
+.file-btn { position: relative; overflow: hidden; }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.toast { min-height: 1.5em; margin: -10px 0 0; font-size: var(--step--1); color: var(--muted); }
+
+.spec { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; font-size: var(--step--1); }
+.spec dt { color: var(--muted); }
+.spec dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
+
+.keys { display: grid; gap: 6px; font-size: var(--step--1); margin: 0; padding: 0; list-style: none; }
+.keys li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--rule); padding-bottom: 6px; }
+kbd {
+  font-family: var(--font-data); font-size: 0.75rem; border: 1px solid var(--rule);
+  border-bottom-width: 2px; border-radius: 4px; padding: 0 6px; background: var(--ground-2); white-space: nowrap;
+}
+.later { margin: 0; padding-left: 18px; color: var(--muted); font-size: var(--step--1); display: grid; gap: 4px; }
+section > p { margin: 0; }
+</style>
+
+<main class="stage">
+  <div class="device-col">
+    <div class="device" id="device">
+      <button class="hw power" id="btn-power" aria-label="Power (hold to sleep)" title="Power: hold to sleep"></button>
+      <button class="hw switch" id="btn-switch" aria-label="Slide switch" aria-pressed="false" title="Slide switch"></button>
+      <button class="hw page-up" id="btn-up" aria-label="Page up" title="Page up"></button>
+      <button class="hw page-down" id="btn-down" aria-label="Page down" title="Page down"></button>
+      <div class="screen">
+        <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+        <div class="status" id="status" role="status">
+          <strong>Starting firmware</strong>
+          <span id="status-text">Loading CrossPoint (about 8 MB)</span>
+          <div class="bar" aria-hidden="true"><i></i></div>
+        </div>
+      </div>
+      <div class="device-caption" aria-hidden="true">3.97 IN · E-PAPER</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <header>
+      <h1>Picco Web</h1>
+      <p class="lede">CrossPoint, the open firmware for the BOOX Picco, compiled to WebAssembly and running on this page. Tap the screen, use the buttons on the shell, or your keyboard.</p>
+    </header>
+
+    <div class="actions">
+      <label class="btn btn-primary file-btn" for="file-input">Add EPUB
+        <input type="file" id="file-input" accept=".epub,.txt,.md,.xtc,.xtch,.bmp">
+      </label>
+      <button class="btn" id="btn-confirm" type="button">Confirm key</button>
+      <button class="btn" id="btn-restart" type="button">Restart</button>
+      <button class="btn btn-danger" id="btn-reset" type="button">Erase SD card</button>
+    </div>
+    <p class="toast" id="toast" role="status" aria-live="polite"></p>
+
+    <section>
+      <h2>Controls</h2>
+      <ul class="keys">
+        <li><span>Page buttons (right edge)</span><span><kbd>↑</kbd> <kbd>↓</kbd></span></li>
+        <li><span>Power (top edge), hold to sleep</span><kbd>P</kbd></li>
+        <li><span>Slide switch (left edge)</span><kbd>T</kbd></li>
+        <li><span>Confirm (provisional input)</span><kbd>Return</kbd></li>
+        <li><span>Touch</span><span>tap or swipe the screen</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Device</h2>
+      <dl class="spec">
+        <dt>Screen</dt><dd>3.97 in · 480 × 800 portrait</dd>
+        <dt>Profile</dt><dd>Picco · ESP32-S3 · SSD1677</dd>
+        <dt>Firmware</dt><dd>CrossPoint 2.0.0 · bb93a46</dd>
+        <dt>SD card</dt><dd>this browser only</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>Not connected yet</h2>
+      <ul class="later">
+        <li>Wi-Fi, OPDS catalogs and plugin downloads</li>
+        <li>File Transfer's web server</li>
+        <li>E-ink refresh flashes and ghosting</li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<script src="picco-boot.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const canvas = $("canvas");
+  const device = $("device");
+  const status = $("status");
+  const toast = $("toast");
+  const KEY = { up: 38, down: 40, power: 80, confirm: 13, toggle: 84 };
+  let ready = false;
+
+  function say(text) { toast.textContent = text; }
+
+  // Fit the live screen to the viewport, keeping the framebuffer's aspect
+  // (it switches to 800 x 480 when the firmware rotates to landscape).
+  function fit() {
+    const cw = canvas.width > 300 ? canvas.width : 480;
+    const ch = canvas.height > 150 ? canvas.height : 800;
+    const wide = window.matchMedia("(min-width: 860px)").matches;
+    const maxW = Math.min(document.documentElement.clientWidth - 2 * 16 - 2 * 18 - 32, wide ? 560 : 640);
+    const maxH = window.innerHeight * (wide ? 0.82 : 0.66) - 48;
+    const scale = Math.max(0.3, Math.min(maxW / cw, maxH / ch, 1));
+    device.style.setProperty("--sw", Math.round(cw * scale) + "px");
+    device.style.setProperty("--sh", Math.round(ch * scale) + "px");
+  }
+  window.addEventListener("resize", fit);
+  new MutationObserver(fit).observe(canvas, { attributes: true, attributeFilter: ["width", "height"] });
+  fit();
+
+  // Hardware buttons: press on pointer down, release on pointer up, so a
+  // hold reads as a hold (power sleeps after about half a second).
+  function bindHold(el, code) {
+    let down = false;
+    const press = (e) => {
+      e.preventDefault();
+      if (!ready || down) return;
+      down = true;
+      el.classList.add("is-down");
+      Module.picco.press(code, true);
+    };
+    const release = () => {
+      if (!down) return;
+      down = false;
+      el.classList.remove("is-down");
+      Module.picco.press(code, false);
+    };
+    el.addEventListener("pointerdown", press);
+    el.addEventListener("pointerup", release);
+    el.addEventListener("pointerleave", release);
+    el.addEventListener("pointercancel", release);
+    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") press(e); });
+    el.addEventListener("keyup", (e) => { if (e.key === "Enter" || e.key === " ") release(); });
+  }
+  bindHold($("btn-up"), KEY.up);
+  bindHold($("btn-down"), KEY.down);
+  bindHold($("btn-power"), KEY.power);
+  bindHold($("btn-confirm"), KEY.confirm);
+
+  const sw = $("btn-switch");
+  function showSwitch() { sw.setAttribute("aria-pressed", Module.picco.switchOn ? "true" : "false"); }
+  function tapSwitch() {
+    if (!ready) return;
+    Module.picco.press(KEY.toggle, true);
+    setTimeout(() => Module.picco.press(KEY.toggle, false), 80);
+    Module.picco.switchOn = !Module.picco.switchOn;
+    showSwitch();
+  }
+  sw.addEventListener("click", tapSwitch);
+  // Keep the drawn switch in step when T is pressed on a keyboard.
+  window.addEventListener("keydown", (e) => {
+    if (e.isTrusted && !e.repeat && (e.key === "t" || e.key === "T") && ready) {
+      Module.picco.switchOn = !Module.picco.switchOn;
+      showSwitch();
+    }
+  });
+  showSwitch();
+
+  $("file-input").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!ready) { say("Wait for the firmware to start, then add the book again."); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const path = Module.picco.addFile(file.name, new Uint8Array(reader.result));
+        say("Added " + path + ". Open Browse Files, then books.");
+      } catch (err) {
+        say("Could not add " + file.name + ": " + err);
+      }
+      e.target.value = "";
+    };
+    reader.onerror = () => say("Could not read " + file.name + ".");
+    reader.readAsArrayBuffer(file);
+  });
+
+  $("btn-restart").addEventListener("click", () => { say("Restarting…"); Module.picco.restart(); });
+
+  // Two-step erase: the first tap arms the button, the second erases.
+  const reset = $("btn-reset");
+  let armTimer = null;
+  reset.addEventListener("click", () => {
+    if (!reset.classList.contains("is-armed")) {
+      reset.classList.add("is-armed");
+      reset.textContent = "Tap again to erase books and settings";
+      clearTimeout(armTimer);
+      armTimer = setTimeout(() => { reset.classList.remove("is-armed"); reset.textContent = "Erase SD card"; }, 4000);
+      return;
+    }
+    say("Erasing the SD card and restarting…");
+    Module.picco.resetCard();
+  });
+
+  const bootDone = Module.onRuntimeInitialized;
+  Module.onRuntimeInitialized = function () {
+    if (bootDone) bootDone();
+    ready = true;
+    status.hidden = true;
+    fit();
+  };
+  Module.onAbort = function (what) {
+    ready = false;
+    status.hidden = false;
+    status.innerHTML = "<strong>The firmware stopped</strong><span>" + String(what || "unexpected error").slice(0, 160) +
+      "</span><button class=\"btn\" type=\"button\" onclick=\"location.reload()\">Restart</button>";
+  };
+})();
+</script>
+<script src="picco.js"></script>
