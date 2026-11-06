@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Build dist/ (picco.wasm, picco.js and the page) from the sources fetched by
-# tools/bootstrap.sh. Incremental: unchanged objects are reused.
+# Build dist/ (one .js/.wasm pair per device, plus the pages) from the sources
+# fetched by tools/bootstrap.sh. Incremental: unchanged objects are reused.
+# PICCO_DEVICES limits the targets, e.g. PICCO_DEVICES=trmnl tools/build.sh
 set -euo pipefail
 
 REPO=$(cd "$(dirname "$0")/.." && pwd)
@@ -20,5 +21,7 @@ python3 "$REPO/tools/make_seed.py"
 echo "== Simulator sources"
 python3 "$REPO/tools/patch_sim.py"
 python3 "$REPO/tools/resolve.py"
-echo "== Compile and link"
-python3 "$REPO/tools/build.py"
+for device in ${PICCO_DEVICES:-picco trmnl}; do
+  echo "== Compile and link: $device"
+  python3 "$REPO/tools/build.py" --device "$device"
+done

@@ -1,5 +1,5 @@
-// Boots the CrossPoint firmware (WebAssembly) as a browser Picco.
-// Load before picco.js. The page must contain <canvas id="canvas"> (the id Emscripten SDL2 targets).
+// Boots the CrossPoint firmware (WebAssembly) as a browser device (Picco or TRMNL).
+// Load before the device script (picco.js or trmnl.js). The page must contain <canvas id="canvas"> (the id Emscripten SDL2 targets).
 (function () {
   const SD = "/fs_"; // the simulator's SD-card root (SimulatorStorageRoot.h)
   const params = new URLSearchParams(location.hash.slice(1));
@@ -22,15 +22,24 @@
     }
   }
 
+  // Copy the embedded seed tree onto a fresh SD card. Emscripten's packager
+  // drops dot-files, so a folder named "dot-<name>" is written as ".<name>".
   function seed(FS) {
     if (FS.analyzePath(SD + "/.picco-web-seeded").exists) return;
-    for (const dir of ["/books"]) {
-      try { FS.mkdir(SD + dir); } catch (e) {}
-      for (const name of FS.readdir("/seed" + dir)) {
+    const copy = (from, to) => {
+      for (const name of FS.readdir(from)) {
         if (name === "." || name === "..") continue;
-        FS.writeFile(SD + dir + "/" + name, FS.readFile("/seed" + dir + "/" + name));
+        const src = from + "/" + name;
+        const dest = to + "/" + name.replace(/^dot-/, ".");
+        if (FS.isDir(FS.stat(src).mode)) {
+          try { FS.mkdir(dest); } catch (e) {}
+          copy(src, dest);
+        } else {
+          FS.writeFile(dest, FS.readFile(src));
+        }
       }
-    }
+    };
+    copy("/seed", SD);
     FS.writeFile(SD + "/.picco-web-seeded", "1");
     log("seeded SD card");
   }

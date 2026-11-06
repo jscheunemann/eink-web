@@ -3,7 +3,7 @@
 
 Files are served from dist/ through Playwright request interception, so no
 local web server is started. Usage: smoke.py [page] [actions...]
-Actions: wait:MS  key:CODE  tap:X,Y  shot:NAME
+Actions: wait:MS  key:CODE  hold:CODE,MS  btn:MS (TRMNL button)  tap:X,Y  shot:NAME
 """
 import mimetypes
 import os
@@ -56,6 +56,14 @@ def main():
                 page.wait_for_timeout(ms)
                 page.evaluate(f"Module.picco.press({code}, false)")
                 page.wait_for_timeout(600)
+            elif kind == "btn":
+                # Press the on-page TRMNL button for MS milliseconds.
+                box = page.locator("#big").bounding_box()
+                page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+                page.mouse.down()
+                page.wait_for_timeout(int(arg))
+                page.mouse.up()
+                page.wait_for_timeout(900)
             elif kind == "tap":
                 x, y = (int(v) for v in arg.split(","))
                 box = page.locator("#canvas").bounding_box(); sx = box["width"] / 480; sy = box["height"] / 800

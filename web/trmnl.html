@@ -1,0 +1,368 @@
+<title>TRMNL Reader</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a landscape desk display as the hero, its single button rendered
+   large beneath it as the main control; notes stack below. */
+:root {
+  --ground: #e4e7e3;
+  --ground-2: #d8dcd7;
+  --ink: #1c201f;
+  --muted: #59625e;
+  --rule: #c3c9c4;
+  --shell: #222524;       /* matte black ABS */
+  --shell-hi: #343837;
+  --shell-lo: #141615;
+  --key: #4a504d;
+  --accent: #2c6a86;      /* "select" zone, focus */
+  --accent-ink: #ffffff;
+  --back: #9a5a1c;        /* "back" zone */
+  --danger: #a3352b;
+  --font-ui: "Atkinson Hyperlegible", "Segoe UI", Roboto, system-ui, sans-serif;
+  --font-data: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --step--1: 0.8125rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.125rem;
+  --step-2: 1.75rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #141716; --ground-2: #1c201f; --ink: #e2e7e4; --muted: #9aa49f; --rule: #2f3533;
+    --shell: #2f3332; --shell-hi: #434846; --shell-lo: #1e2120; --key: #5a615d;
+    --accent: #6cb1cf; --accent-ink: #0d1a20; --back: #e0a560; --danger: #e07a6e; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #141716; --ground-2: #1c201f; --ink: #e2e7e4; --muted: #9aa49f; --rule: #2f3533;
+  --shell: #2f3332; --shell-hi: #434846; --shell-lo: #1e2120; --key: #5a615d;
+  --accent: #6cb1cf; --accent-ink: #0d1a20; --back: #e0a560; --danger: #e07a6e; color-scheme: dark;
+}
+
+html, body { min-height: 100%; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--step-0);
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 32px;
+}
+.page { max-width: 1000px; margin-inline: auto; display: grid; gap: 28px; }
+
+/* ---- The device ---- */
+.device-wrap { display: grid; justify-items: center; gap: 0; }
+.device {
+  position: relative;
+  background: linear-gradient(170deg, var(--shell-hi), var(--shell) 30%, var(--shell-lo));
+  border-radius: 14px;
+  padding: var(--bz, 26px);
+  box-shadow: 0 1px 0 var(--shell-hi) inset, 0 22px 40px -22px rgba(0, 0, 0, 0.6);
+}
+.screen {
+  position: relative;
+  width: var(--sw, 640px);
+  height: var(--sh, 384px);
+  background: #f4f4f0;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px var(--shell-lo);
+}
+#canvas {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: var(--cw, 640px) !important;
+  height: var(--ch, 384px) !important;
+  transform: translate(-50%, -50%) rotate(var(--rot, 0deg));
+  outline: none;
+}
+.hw-button {
+  position: absolute; top: -5px; right: 12%;
+  width: 34px; height: 5px; border-radius: 4px 4px 0 0;
+  background: var(--key);
+}
+.hw-button.is-down { transform: translateY(2px); }
+.stand {
+  width: 30%; height: 10px; border-radius: 0 0 6px 6px;
+  background: linear-gradient(180deg, #b9bcbb, #8d9190);
+  opacity: 0.85;
+}
+.status {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; gap: 10px; text-align: center;
+  background: #f4f4f0; color: #1c201f;
+  font-family: var(--font-data); font-size: var(--step--1); padding: 20px;
+}
+.status strong { font-family: var(--font-ui); font-size: var(--step-1); }
+.bar { width: 120px; height: 3px; background: #d5d9d5; justify-self: center; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 40%; background: #1c201f; animation: slide 1.2s ease-in-out infinite; }
+@keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+@media (prefers-reduced-motion: reduce) { .bar i { animation: none; width: 100%; } }
+
+/* ---- The one button ---- */
+.control { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 20px 28px; }
+.big {
+  position: relative; width: 112px; height: 112px; flex: none;
+  border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+  background: var(--ground-2); color: var(--ink);
+  touch-action: none; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+}
+.big:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.big svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.big .track { stroke: var(--rule); }
+.big .ring { stroke: var(--muted); transition: stroke 80ms; }
+.big[data-zone="select"] .ring { stroke: var(--accent); }
+.big[data-zone="back"] .ring { stroke: var(--back); }
+.big .label { position: relative; font-weight: 700; font-size: var(--step-1); }
+.legend { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0; font-size: var(--step--1); }
+.legend dt { font-weight: 700; }
+.legend dd { margin: 0; color: var(--muted); }
+.legend .z-select { color: var(--accent); }
+.legend .z-back { color: var(--back); }
+
+/* ---- Notes ---- */
+.notes { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+.notes > * { min-width: 0; }
+h1 { font-size: var(--step-2); line-height: 1.15; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h2 { font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 0 0 8px; }
+.lede { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn {
+  font: inherit; font-weight: 700; font-size: var(--step--1);
+  border-radius: 8px; padding: 10px 14px; cursor: pointer;
+  border: 1px solid var(--rule); background: var(--ground-2); color: var(--ink);
+  display: inline-flex; align-items: center; gap: 8px; min-height: 42px;
+}
+.btn:hover { border-color: var(--muted); }
+.btn:focus-visible, .file-btn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn-danger { color: var(--danger); }
+.btn-danger.is-armed { background: var(--danger); border-color: var(--danger); color: var(--ground); }
+.file-btn { position: relative; overflow: hidden; }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.toast { min-height: 1.5em; margin: 0; font-size: var(--step--1); color: var(--muted); }
+.spec { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; font-size: var(--step--1); }
+.spec dt { color: var(--muted); }
+.spec dd { margin: 0; font-family: var(--font-data); min-width: 0; overflow-wrap: anywhere; }
+.plain { margin: 0; color: var(--muted); font-size: var(--step--1); }
+kbd { font-family: var(--font-data); font-size: 0.75rem; border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--ground-2); }
+</style>
+
+<div class="page">
+  <header>
+    <h1>TRMNL Reader</h1>
+    <p class="lede">CrossPoint, the open e-reader firmware, running on a TRMNL-sized landscape panel and driven by one button, to see what reading on a TRMNL would feel like before porting the firmware.</p>
+  </header>
+
+  <div class="device-wrap">
+    <div class="device" id="device">
+      <span class="hw-button" id="hw-button" aria-hidden="true"></span>
+      <div class="screen" id="screen">
+        <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+        <div class="status" id="status" role="status">
+          <strong>Starting firmware</strong>
+          <span>Loading CrossPoint (about 8 MB)</span>
+          <div class="bar" aria-hidden="true"><i></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="stand" aria-hidden="true"></div>
+  </div>
+
+  <div class="control">
+    <button class="big" id="big" type="button" data-zone="tap" aria-label="TRMNL button. Tap: next. Double-tap: previous. Hold: select. Keep holding: back.">
+      <svg viewBox="0 0 112 112" aria-hidden="true">
+        <circle class="track" cx="56" cy="56" r="50" fill="none" stroke-width="5"/>
+        <circle class="ring" id="ring" cx="56" cy="56" r="50" fill="none" stroke-width="5" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16"/>
+      </svg>
+      <span class="label" id="big-label">Button</span>
+    </button>
+    <dl class="legend">
+      <dt>Tap</dt><dd>Next page, or next item</dd>
+      <dt>Double-tap</dt><dd>Previous page, or previous item</dd>
+      <dt class="z-select">Hold, release</dt><dd>Open or select (0.5 to 1.5 s)</dd>
+      <dt class="z-back">Keep holding</dt><dd>Back a screen (past 1.5 s)</dd>
+    </dl>
+  </div>
+
+  <div class="notes">
+    <section>
+      <h2>Your books</h2>
+      <div class="actions">
+        <label class="btn btn-primary file-btn" for="file-input">Add EPUB
+          <input type="file" id="file-input" accept=".epub,.txt,.md,.xtc,.xtch,.bmp">
+        </label>
+        <button class="btn" id="btn-restart" type="button">Restart</button>
+        <button class="btn btn-danger" id="btn-reset" type="button">Erase SD card</button>
+      </div>
+      <p class="toast" id="toast" role="status" aria-live="polite"></p>
+    </section>
+
+    <section>
+      <h2>Why the menus are sideways</h2>
+      <p class="plain">CrossPoint draws its menus in portrait only, so on a landscape TRMNL they appear on their side. That is what the unmodified firmware would show on real hardware, and the main thing a port would change. Books open in landscape: this SD card starts with Reading Orientation set to Landscape CCW. The Resume, Select, Up and Down tabs along the right edge are hints for the stand-in board's four front buttons; a TRMNL port would drop them.</p>
+    </section>
+
+    <section>
+      <h2>Device</h2>
+      <dl class="spec">
+        <dt>Screen</dt><dd>7.5 in · 800 × 480 landscape</dd>
+        <dt>Stand-in</dt><dd>Xteink X4 Classic profile (closest CrossPoint board)</dd>
+        <dt>Firmware</dt><dd>CrossPoint 2.0.0 · bb93a46</dd>
+        <dt>SD card</dt><dd>this browser only</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>Also on a keyboard</h2>
+      <p class="plain"><kbd>Space</kbd> is the TRMNL button, with the same tap and hold timing. For comparison, the full button set still works: <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd>, <kbd>Return</kbd> select, <kbd>Esc</kbd> back.</p>
+    </section>
+  </div>
+</div>
+
+<script src="picco-boot.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const canvas = $("canvas");
+  const device = $("device");
+  const status = $("status");
+  const toast = $("toast");
+  const big = $("big");
+  const ring = $("ring");
+  const bigLabel = $("big-label");
+  const hwButton = $("hw-button");
+  const KEY = { up: 38, down: 40, confirm: 13, back: 27 };
+  const TAP_MAX = 500, BACK_AT = 1500, DOUBLE_GAP = 280, RING = 314.16;
+  let ready = false;
+
+  function say(text) { toast.textContent = text; }
+
+  // The panel is 800 x 480 landscape. Portrait output from the simulator is
+  // the panel turned 90 degrees clockwise, so turn it back to show the
+  // physical panel; landscape (CCW) output is already the panel as it sits.
+  function fit() {
+    const wide = document.documentElement.clientWidth;
+    const avail = Math.min(wide - 2 * 16, 900);
+    const sw = Math.max(240, Math.round(avail * 0.86));
+    const sh = Math.round(sw * 480 / 800);
+    const bz = Math.max(12, Math.round(sw * 0.045));
+    device.style.setProperty("--sw", sw + "px");
+    device.style.setProperty("--sh", sh + "px");
+    device.style.setProperty("--bz", bz + "px");
+    const portrait = canvas.height > canvas.width && canvas.width > 300;
+    device.style.setProperty("--cw", (portrait ? sh : sw) + "px");
+    device.style.setProperty("--ch", (portrait ? sw : sh) + "px");
+    device.style.setProperty("--rot", portrait ? "-90deg" : "0deg");
+  }
+  window.addEventListener("resize", fit);
+  new MutationObserver(fit).observe(canvas, { attributes: true, attributeFilter: ["width", "height"] });
+  fit();
+
+  function send(code) {
+    Module.picco.press(code, true);
+    setTimeout(() => Module.picco.press(code, false), 90);
+  }
+
+  // One-button scheme: tap = next, double-tap = previous,
+  // hold 0.5-1.5 s then release = select, hold past 1.5 s = back.
+  let downAt = 0, raf = 0, firedBack = false, tapTimer = null;
+  function zoneFor(ms) { return ms < TAP_MAX ? "tap" : ms < BACK_AT ? "select" : "back"; }
+  function paint() {
+    const ms = performance.now() - downAt;
+    const zone = zoneFor(ms);
+    big.dataset.zone = zone;
+    bigLabel.textContent = zone === "tap" ? "Next" : zone === "select" ? "Select" : "Back";
+    ring.style.strokeDashoffset = RING * (1 - Math.min(ms / BACK_AT, 1));
+    if (zone === "back" && !firedBack) { firedBack = true; send(KEY.back); }
+    raf = requestAnimationFrame(paint);
+  }
+  function pressStart(e) {
+    if (e) e.preventDefault();
+    if (!ready || downAt) return;
+    downAt = performance.now();
+    firedBack = false;
+    hwButton.classList.add("is-down");
+    paint();
+  }
+  function pressEnd() {
+    if (!downAt) return;
+    const ms = performance.now() - downAt;
+    downAt = 0;
+    cancelAnimationFrame(raf);
+    hwButton.classList.remove("is-down");
+    ring.style.strokeDashoffset = RING;
+    big.dataset.zone = "tap";
+    bigLabel.textContent = "Button";
+    const zone = zoneFor(ms);
+    if (zone === "select") { send(KEY.confirm); return; }
+    if (zone === "back") return; // already sent when the hold crossed 1.5 s
+    if (tapTimer) {
+      clearTimeout(tapTimer);
+      tapTimer = null;
+      send(KEY.up);
+    } else {
+      tapTimer = setTimeout(() => { tapTimer = null; send(KEY.down); }, DOUBLE_GAP);
+    }
+  }
+  big.addEventListener("pointerdown", pressStart);
+  big.addEventListener("pointerup", pressEnd);
+  big.addEventListener("pointercancel", pressEnd);
+  big.addEventListener("pointerleave", pressEnd);
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Space" && e.isTrusted) { if (!e.repeat) pressStart(e); else e.preventDefault(); }
+  });
+  window.addEventListener("keyup", (e) => { if (e.code === "Space" && e.isTrusted) pressEnd(); });
+
+  $("file-input").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!ready) { say("Wait for the firmware to start, then add the book again."); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const path = Module.picco.addFile(file.name, new Uint8Array(reader.result));
+        say("Added " + path + ". Open Browse Files, then books.");
+      } catch (err) {
+        say("Could not add " + file.name + ": " + err);
+      }
+      e.target.value = "";
+    };
+    reader.onerror = () => say("Could not read " + file.name + ".");
+    reader.readAsArrayBuffer(file);
+  });
+
+  $("btn-restart").addEventListener("click", () => { say("Restarting…"); Module.picco.restart(); });
+
+  const reset = $("btn-reset");
+  let armTimer = null;
+  reset.addEventListener("click", () => {
+    if (!reset.classList.contains("is-armed")) {
+      reset.classList.add("is-armed");
+      reset.textContent = "Tap again to erase books and settings";
+      clearTimeout(armTimer);
+      armTimer = setTimeout(() => { reset.classList.remove("is-armed"); reset.textContent = "Erase SD card"; }, 4000);
+      return;
+    }
+    say("Erasing the SD card and restarting…");
+    Module.picco.resetCard();
+  });
+
+  const bootDone = Module.onRuntimeInitialized;
+  Module.onRuntimeInitialized = function () {
+    if (bootDone) bootDone();
+    ready = true;
+    status.hidden = true;
+    fit();
+  };
+  Module.onAbort = function (what) {
+    ready = false;
+    status.hidden = false;
+    status.innerHTML = "<strong>The firmware stopped</strong><span>" + String(what || "unexpected error").slice(0, 160) +
+      "</span><button class=\"btn\" type=\"button\" onclick=\"location.reload()\">Restart</button>";
+  };
+})();
+</script>
+<script src="trmnl.js"></script>
